@@ -1,0 +1,133 @@
+{% extends 'base.html' %}
+
+{% block title %}Appareils{% endblock %}
+{% block page_title %}Appareils{% endblock %}
+{% block page_subtitle %}Inventaire des équipements électriques{% endblock %}
+
+{% block content %}
+
+
+<div class="card mb-4">
+    <div class="card-body p-3">
+        <form method="GET" class="row g-2 align-items-end">
+            <div class="col-md-4">
+                <div class="search-wrapper">
+                    <i class="bi bi-search"></i>
+                    <input type="text" name="q" value="{{ query }}" class="form-control search-input" placeholder="Rechercher un appareil...">
+                </div>
+            </div>
+            <div class="col-md-3">
+                <select name="zone" class="form-select">
+                    <option value="">Toutes les zones</option>
+                    {% for zone in zones %}
+                    <option value="{{ zone.id }}" {% if zone_id == zone.id|stringformat:"s" %}selected{% endif %}>{{ zone.nom_zone }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-3">
+                <select name="type_alimentation" class="form-select">
+                    <option value="">Tous les types</option>
+                    {% for val, label in type_choices %}
+                    <option value="{{ val }}" {% if type_alim == val %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-2 d-flex gap-2">
+                <button type="submit" class="btn btn-eco w-100">Filtrer</button>
+                <a href="{% url 'liste_appareils' %}" class="btn" style="background:rgba(255,255,255,0.06);color:#8aa3bf;border:1px solid #1e3a5f;">
+                    <i class="bi bi-x"></i>
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <div style="color:#6c8aad;font-size:0.85rem">
+        <strong style="color:#e0e8f0">{{ appareils|length }}</strong> appareil(s) trouvé(s)
+    </div>
+    <a href="{% url 'ajouter_appareil' %}" class="btn btn-eco admin-only">
+        <i class="bi bi-plus-circle me-1"></i> Ajouter un appareil
+    </a>
+</div>
+
+
+<div class="card">
+    <div class="card-body p-0">
+        {% if appareils %}
+        <div class="table-responsive">
+            <table class="table mb-0">
+                <thead>
+                    <tr>
+                        <th>Appareil</th>
+                        <th>Zone</th>
+                        <th>Type d'alimentation</th>
+                        <th>Puissance nominale</th>
+                        <th>Charge / Limite zone</th>
+                        <th class="admin-only">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for appareil in appareils %}
+                    <tr>
+                        <td>
+                            <div class="d-flex align-items-center gap-2">
+                                <div class="device-avatar"><i class="bi bi-plug"></i></div>
+                                <div>
+                                    <a href="{% url 'detail_appareil' appareil.id %}" style="color:#e0e8f0;text-decoration:none;font-weight:500;">
+                                        {{ appareil.nom }}
+                                    </a>
+                                    <div style="font-size:0.75rem;color:#4a6580">Installé le {{ appareil.date_installation|date:"d/m/Y" }}</div>
+                                </div>
+                            </div>
+                        </td>
+                        <td>
+                            <span class="badge rounded-pill px-3" style="background:rgba(13,110,253,0.15);color:#4da3ff;border:1px solid rgba(13,110,253,0.3);">
+                                {{ appareil.zone.nom_zone }}
+                            </span>
+                        </td>
+                        <td style="color:#8aa3bf">{{ appareil.get_type_alimentation_display }}</td>
+                        <td><strong>{{ appareil.puissance_nominale }}</strong> <span style="color:#4a6580">W</span></td>
+                        <td style="min-width:150px">
+                            {% with pct=appareil.puissance_nominale %}
+                            {% widthratio appareil.puissance_nominale appareil.zone.limite_puissance 100 as bar_pct %}
+                            <div class="d-flex align-items-center gap-2">
+                                <div class="progress flex-grow-1" style="height:6px">
+                                    <div class="progress-bar {% if bar_pct > 80 %}bg-danger{% elif bar_pct > 50 %}bg-warning{% else %}bg-success{% endif %}"
+                                         style="width:{{ bar_pct }}%"></div>
+                                </div>
+                                <small style="color:#6c8aad;white-space:nowrap">{{ bar_pct }}%</small>
+                            </div>
+                            {% endwith %}
+                        </td>
+                        <td class="admin-only">
+                            <div class="d-flex gap-1">
+                                <a href="{% url 'detail_appareil' appareil.id %}" class="btn btn-sm" style="background:rgba(13,110,253,0.15);color:#4da3ff;border:1px solid rgba(13,110,253,0.2);" title="Détail">
+                                    <i class="bi bi-eye"></i>
+                                </a>
+                                <a href="{% url 'modifier_appareil' appareil.id %}" class="btn btn-sm admin-only" style="background:rgba(255,193,7,0.15);color:#ffc107;border:1px solid rgba(255,193,7,0.2);" title="Modifier">
+                                    <i class="bi bi-pencil"></i>
+                                </a>
+                                <a href="{% url 'supprimer_appareil' appareil.id %}" class="btn btn-sm admin-only" style="background:rgba(220,53,69,0.15);color:#f87171;border:1px solid rgba(220,53,69,0.2);" title="Supprimer"
+                                   onclick="return confirm('Supprimer {{ appareil.nom }} ?')">
+                                    <i class="bi bi-trash"></i>
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="text-center py-5">
+            <i class="bi bi-cpu" style="font-size:3rem;color:#1e3a5f;"></i>
+            <p class="mt-3" style="color:#4a6580;">Aucun appareil trouvé</p>
+            <a href="{% url 'ajouter_appareil' %}" class="btn btn-eco mt-2">+ Ajouter un appareil</a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+{% endblock %}

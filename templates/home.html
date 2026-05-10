@@ -1,0 +1,206 @@
+{% extends 'base.html' %}
+
+{% block title %}Tableau de bord{% endblock %}
+{% block page_title %}Tableau de bord{% endblock %}
+{% block page_subtitle %}Vue d'ensemble de la consommation électrique{% endblock %}
+
+{% block content %}
+
+
+<div class="row g-3 mb-4">
+    <div class="col-sm-6 col-xl-3">
+        <div class="stat-card green">
+            <div class="stat-icon green"><i class="bi bi-cpu"></i></div>
+            <div class="stat-value">{{ total_appareils }}</div>
+            <div class="stat-label">Appareils enregistrés</div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-xl-3">
+        <div class="stat-card blue">
+            <div class="stat-icon blue"><i class="bi bi-geo-alt"></i></div>
+            <div class="stat-value">{{ total_zones }}</div>
+            <div class="stat-label">Zones surveillées</div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-xl-3">
+        <div class="stat-card orange">
+            <div class="stat-icon orange"><i class="bi bi-lightning-charge"></i></div>
+            <div class="stat-value">{{ consommation_totale }}<span style="font-size:1rem;font-weight:400;color:#6c8aad"> kWh</span></div>
+            <div class="stat-label">Consommation totale</div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-xl-3">
+        <div class="stat-card purple">
+            <div class="stat-icon purple"><i class="bi bi-activity"></i></div>
+            <div class="stat-value">{{ total_releves }}</div>
+            <div class="stat-label">Relevés enregistrés</div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-3">
+    
+    <div class="col-lg-8">
+        <div class="card h-100">
+            <div class="card-header d-flex justify-content-between align-items-center px-4 py-3">
+                <div>
+                    <h6 class="mb-0 fw-semibold">Derniers relevés</h6>
+                    <small style="color:#4a6580">5 mesures les plus récentes</small>
+                </div>
+                <a href="{% url 'liste_releves' %}" class="btn btn-sm btn-outline-eco">Voir tout</a>
+            </div>
+            <div class="card-body p-0">
+                {% if derniers_releves %}
+                <div class="table-responsive">
+                    <table class="table mb-0">
+                        <thead>
+                            <tr>
+                                <th>Appareil</th>
+                                <th>Zone</th>
+                                <th>Consommation</th>
+                                <th>Puissance</th>
+                                <th>Intensité</th>
+                                <th>Date</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for releve in derniers_releves %}
+                            <tr>
+                                <td>
+                                    <div class="d-flex align-items-center gap-2">
+                                        <div class="device-avatar"><i class="bi bi-plug"></i></div>
+                                        <span>{{ releve.appareil.nom }}</span>
+                                    </div>
+                                </td>
+                                <td><span style="color:#6c8aad">{{ releve.appareil.zone.nom_zone }}</span></td>
+                                <td><strong>{{ releve.valeur_kwh }} kWh</strong></td>
+                                <td>{{ releve.puissance_instantanee }} W</td>
+                                <td>
+                                    <span class="badge badge-intensite-{{ releve.intensite_badge }} rounded-pill px-3 py-1">
+                                        {% if releve.intensite_badge == 'success' %}Faible
+                                        {% elif releve.intensite_badge == 'warning' %}Modérée
+                                        {% else %}Élevée{% endif %}
+                                    </span>
+                                </td>
+                                <td style="color:#6c8aad;font-size:0.85rem">{{ releve.date_heure_releve|date:"d/m/Y H:i" }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center py-5">
+                    <i class="bi bi-activity" style="font-size:3rem;color:#1e3a5f;"></i>
+                    <p class="mt-3" style="color:#4a6580;">Aucun relevé enregistré</p>
+                    <a href="{% url 'ajouter_releve' %}" class="btn btn-eco mt-2">+ Ajouter un relevé</a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    
+    <div class="col-lg-4">
+        {% if user.is_staff %}
+        
+        <div class="card mb-3">
+            <div class="card-header px-4 py-3">
+                <h6 class="mb-0 fw-semibold">Actions rapides</h6>
+            </div>
+            <div class="card-body d-flex flex-column gap-2 p-3">
+                <a href="{% url 'ajouter_releve' %}" class="btn btn-eco d-flex align-items-center gap-2">
+                    <i class="bi bi-plus-circle"></i> Nouveau relevé
+                </a>
+                <a href="{% url 'ajouter_appareil' %}" class="btn btn-outline-eco d-flex align-items-center gap-2">
+                    <i class="bi bi-plus-square"></i> Nouvel appareil
+                </a>
+                <a href="{% url 'liste_appareils' %}" class="btn btn-outline-secondary d-flex align-items-center gap-2" style="color:#8aa3bf;border-color:#1e3a5f;">
+                    <i class="bi bi-cpu"></i> Gérer les appareils
+                </a>
+                <a href="/admin/" class="btn btn-outline-secondary d-flex align-items-center gap-2" style="color:#8aa3bf;border-color:#1e3a5f;">
+                    <i class="bi bi-shield-lock"></i> Administration
+                </a>
+            </div>
+        </div>
+        {% endif %}
+
+       
+        <div class="card">
+            <div class="card-header px-4 py-3">
+                <h6 class="mb-0 fw-semibold">Pic de puissance</h6>
+            </div>
+            <div class="card-body p-4 text-center">
+                <div style="font-size:2.5rem;font-weight:800;color:var(--eco-orange)">{{ puissance_max }}</div>
+                <div style="color:#6c8aad;font-size:0.8rem;text-transform:uppercase;letter-spacing:1px">Watts — maximum enregistré</div>
+                <div class="mt-3">
+                    <div class="d-flex justify-content-between mb-1">
+                        <small style="color:#4a6580">Intensité</small>
+                        <small style="color:#ff6b35">{% if puissance_max > 5000 %}Critique{% elif puissance_max > 2000 %}Élevée{% else %}Normale{% endif %}</small>
+                    </div>
+                    <div class="progress">
+                        <div class="progress-bar {% if puissance_max > 5000 %}bg-danger{% elif puissance_max > 2000 %}bg-warning{% else %}bg-success{% endif %}"
+                             style="width: {% if puissance_max > 0 %}{% widthratio puissance_max 10000 100 %}{% else %}0{% endif %}%"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<div class="card mt-4">
+    <div class="card-header px-4 py-3">
+        <h6 class="mb-0 fw-semibold"><i class="bi bi-graph-up-arrow me-2"></i>Consommation Globale (7 derniers jours)</h6>
+    </div>
+    <div class="card-body p-4">
+        <div style="height: 300px; position: relative;">
+            <canvas id="globalConsumptionChart"></canvas>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    const labels = {{ chart_labels|safe }};
+    const values = {{ chart_values|safe }};
+
+    const canvas = document.getElementById('globalConsumptionChart');
+    if (canvas) {
+        const ctx = canvas.getContext('2d');
+        new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Consommation (kWh)',
+                    data: values,
+                    backgroundColor: 'rgba(0, 200, 150, 0.4)',
+                    borderColor: '#00c896',
+                    borderWidth: 2,
+                    borderRadius: 5
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        grid: { color: 'rgba(255, 255, 255, 0.05)' },
+                        ticks: { color: '#6c8aad' }
+                    },
+                    x: {
+                        grid: { display: false },
+                        ticks: { color: '#6c8aad' }
+                    }
+                }
+            }
+        });
+    }
+</script>
+{% endblock %}

@@ -1,0 +1,134 @@
+{% extends 'base.html' %}
+{% load l10n %}
+
+{% block title %}Relevés{% endblock %}
+{% block page_title %}Relevés de consommation{% endblock %}
+{% block page_subtitle %}Historique de toutes les mesures{% endblock %}
+
+{% block content %}
+
+
+<div class="card mb-4">
+    <div class="card-body p-3">
+        <form method="GET" class="row g-2 align-items-end">
+            <div class="col-md-3">
+                <div class="search-wrapper">
+                    <i class="bi bi-search"></i>
+                    <input type="text" name="q" value="{{ query }}" class="form-control search-input" placeholder="Rechercher un appareil...">
+                </div>
+            </div>
+            <div class="col-md-2">
+                <select name="zone" class="form-select">
+                    <option value="">Toutes les zones</option>
+                    {% for zone in zones %}
+                    <option value="{{ zone.id }}" {% if zone_id == zone.id|stringformat:"s" %}selected{% endif %}>{{ zone.nom_zone }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-2">
+                <input type="date" name="date_debut" value="{{ date_debut }}" class="form-control" placeholder="Date début">
+            </div>
+            <div class="col-md-2">
+                <input type="date" name="date_fin" value="{{ date_fin }}" class="form-control" placeholder="Date fin">
+            </div>
+            <div class="col-md-3 d-flex gap-2">
+                <button type="submit" class="btn btn-eco w-100">Filtrer</button>
+                <a href="{% url 'liste_releves' %}" class="btn" style="background:rgba(255,255,255,0.06);color:#8aa3bf;border:1px solid #1e3a5f;">
+                    <i class="bi bi-x"></i>
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <div style="color:#6c8aad;font-size:0.85rem">
+        <strong style="color:#e0e8f0">{{ releves|length }}</strong> relevé(s) trouvé(s)
+    </div>
+    <a href="{% url 'ajouter_releve' %}" class="btn btn-eco admin-only">
+        <i class="bi bi-plus-circle me-1"></i> Ajouter un relevé
+    </a>
+</div>
+
+<div class="card">
+    <div class="card-body p-0">
+        {% if releves %}
+        <div class="table-responsive">
+            <table class="table mb-0">
+                <thead>
+                    <tr>
+                        <th>Appareil</th>
+                        <th>Zone</th>
+                        <th>Consommation</th>
+                        <th>Puissance inst.</th>
+                        <th>% limite zone</th>
+                        <th>Intensité</th>
+                        <th>Date & heure</th>
+                        <th class="admin-only">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for releve in releves %}
+                    <tr>
+                        <td>
+                            <div class="d-flex align-items-center gap-2">
+                                <div class="device-avatar"><i class="bi bi-plug"></i></div>
+                                <a href="{% url 'detail_appareil' releve.appareil.id %}" style="color:#e0e8f0;text-decoration:none;">
+                                    {{ releve.appareil.nom }}
+                                </a>
+                            </div>
+                        </td>
+                        <td>
+                            <span class="badge rounded-pill px-3" style="background:rgba(13,110,253,0.15);color:#4da3ff;border:1px solid rgba(13,110,253,0.3);">
+                                {{ releve.appareil.zone.nom_zone }}
+                            </span>
+                        </td>
+                        <td><strong>{{ releve.valeur_kwh }} kWh</strong></td>
+                        <td>{{ releve.puissance_instantanee }} W</td>
+                        <td style="min-width:160px">
+                            <div class="d-flex align-items-center gap-2">
+                                <div style="flex-grow:1;height:8px;background:#dde6ee;border-radius:999px;overflow:hidden;">
+                                    <div style="width:{{ releve.pourcentage_limite|unlocalize }}%;height:100%;border-radius:999px;background:#2e7d52;"></div>
+                                </div>
+                                <span style="color:#6c8aad;font-size:0.82rem;min-width:40px;text-align:right;">{{ releve.pourcentage_limite }}%</span>
+                            </div>
+                        </td>
+                        <td>
+                            <span class="badge badge-intensite-{{ releve.intensite_badge }} rounded-pill px-3 py-1">
+                                {% if releve.intensite_badge == 'success' %}
+                                    <i class="bi bi-check-circle me-1"></i>Faible
+                                {% elif releve.intensite_badge == 'warning' %}
+                                    <i class="bi bi-exclamation-circle me-1"></i>Modérée
+                                {% else %}
+                                    <i class="bi bi-x-circle me-1"></i>Élevée
+                                {% endif %}
+                            </span>
+                        </td>
+                        <td style="color:#8aa3bf;font-size:0.85rem">{{ releve.date_heure_releve|date:"d/m/Y H:i" }}</td>
+                        <td class="admin-only">
+                            <div class="d-flex gap-1">
+                                <a href="{% url 'modifier_releve' releve.id %}" class="btn btn-sm admin-only" style="background:rgba(255,193,7,0.15);color:#ffc107;border:1px solid rgba(255,193,7,0.2);" title="Modifier">
+                                    <i class="bi bi-pencil"></i>
+                                </a>
+                                <a href="{% url 'supprimer_releve' releve.id %}" class="btn btn-sm admin-only" style="background:rgba(220,53,69,0.15);color:#f87171;border:1px solid rgba(220,53,69,0.2);" title="Supprimer"
+                                   onclick="return confirm('Supprimer ce relevé ?')">
+                                    <i class="bi bi-trash"></i>
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="text-center py-5">
+            <i class="bi bi-activity" style="font-size:3rem;color:#1e3a5f;"></i>
+            <p class="mt-3" style="color:#4a6580;">Aucun relevé trouvé</p>
+            <a href="{% url 'ajouter_releve' %}" class="btn btn-eco mt-2">+ Ajouter un relevé</a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+{% endblock %}
